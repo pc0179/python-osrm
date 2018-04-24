@@ -74,9 +74,10 @@ def match(points, steps=False, overview="simplified", geometry="polyline",
            .format(overview, str(steps).lower(), geometry)
     ]
 
-    if radius:
+    if len(radius)>1:
         url.append(";".join([str(rad) for rad in radius]))
-    if timestamps:
+    if len(timestamps)>1:
+        url.append("?timestamps=")
         url.append(";".join([str(timestamp) for timestamp in timestamps]))
 
     r = urlopen("".join(url))
