@@ -74,9 +74,10 @@ def match(points, steps=False, overview="simplified", geometry="polyline",
            .format(overview, str(steps).lower(), geometry)
     ]
 
-    if radius:
+    if len(radius)>1:
         url.append(";".join([str(rad) for rad in radius]))
-    if timestamps:
+    if len(timestamps)>1:
+        url.append("?timestamps=")
         url.append(";".join([str(timestamp) for timestamp in timestamps]))
 
     r = urlopen("".join(url))
@@ -119,7 +120,7 @@ def decode_geom(encoded_polyline):
 def simple_route(coord_origin, coord_dest, coord_intermediate=None,
                  alternatives=False, steps=False, output="full",
                  geometry='polyline', overview="simplified",
-                 url_config=RequestConfig, send_as_polyline=True):
+                 url_config=RequestConfig, send_as_polyline=True, annotations='true'):
     """
     Function wrapping OSRM 'viaroute' function and returning the JSON reponse
     with the route_geometry decoded (in WKT or WKB) if needed.
@@ -146,7 +147,7 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
         (Default: "simplified")
     url_config : osrm.RequestConfig, optional
         Parameters regarding the host, version and profile to use
-
+    annotation = 'true'/'false' generates more metadata associated with route
     Returns
     -------
     result : dict
@@ -172,9 +173,9 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
 
         url.extend([
             '{},{}'.format(coord_dest[0], coord_dest[1]),
-            "?overview={}&steps={}&alternatives={}&geometries={}".format(
+            "?overview={}&steps={}&alternatives={}&geometries={}&annotations={}".format(
                  overview, str(steps).lower(),
-                 str(alternatives).lower(), geom_request)
+                 str(alternatives).lower(), geom_request,annotations)
             ])
     else:
         coords = [
@@ -186,9 +187,9 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
         url = [
             host, "/route/", url_config.version, "/", url_config.profile, "/",
             "polyline(", polyline_encode(coords), ")",
-            "?overview={}&steps={}&alternatives={}&geometries={}".format(
+            "?overview={}&steps={}&alternatives={}&geometries={}&annotations={}".format(
                  overview, str(steps).lower(),
-                 str(alternatives).lower(), geom_request)
+                 str(alternatives).lower(), geom_request, annotations)
             ]
     rep = urlopen(''.join(url))
     parsed_json = json.loads(rep.read().decode('utf-8'))
@@ -215,10 +216,10 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
                 parsed_json['code'], parsed_json))
 
 
-def table(coords_src, coords_dest=None,
+def table(coords_src, taxi_ids, coords_dest=None,
           ids_origin=None, ids_dest=None,
           output='np', minutes=False,
-          url_config=RequestConfig, send_as_polyline=True):
+          url_config=RequestConfig, send_as_polyline=True, annotations='distance'):
     """
     Function wrapping OSRM 'table' function in order to get a matrix of
     time distance as a numpy array or as a DataFrame
@@ -249,7 +250,9 @@ def table(coords_src, coords_dest=None,
                 'numpy', 'array' or 'np' for a numpy array (default is "np")
     url_config: osrm.RequestConfig, optional
         Parameters regarding the host, version and profile to use
-
+    
+    annotations : 'distance', returns routing table based on shortest routing distance (metres?)
+    taxi_ids = list of taxi identification numbers, usefull only for output distance matrix
 
     Returns
     -------
@@ -312,6 +315,10 @@ def table(coords_src, coords_dest=None,
                 ';'.join([str(j) for j in range(src_end, dest_end)])
                 ])
 
+    if annotations=='distance':
+        url = ''.join([url,('?annotations=%s' % (annotations))])
+
+
     rep = urlopen(url)
     parsed_json = json.loads(rep.read().decode('utf-8'))
 
@@ -322,7 +329,8 @@ def table(coords_src, coords_dest=None,
         return parsed_json
 
     else:
-        durations = np.array(parsed_json["durations"], dtype=float)
+        #durations = np.array(parsed_json["durations"], dtype=float)
+        distances = np.array(parsed_json['distances'], dtype=float)
         new_src_coords = [ft["location"] for ft in parsed_json["sources"]]
         new_dest_coords = None if not coords_dest \
             else [ft["location"] for ft in parsed_json["destinations"]]
@@ -331,17 +339,16 @@ def table(coords_src, coords_dest=None,
             durations = np.around((durations / 60), 2)
         if output == 2:
             if not ids_origin:
-                ids_origin = [i for i in range(len(coords_src))]
+                #ids_origin = [i for i in range(len(coords_src))]
+                ids_origin = taxi_ids
             if not ids_dest:
                 ids_dest = ids_origin if not coords_dest \
                     else [i for i in range(len(coords_dest))]
 
-            durations = DataFrame(durations,
-                                  index=ids_origin,
-                                  columns=ids_dest,
-                                  dtype=float)
-
-        return durations, new_src_coords, new_dest_coords
+            #durations = DataFrame(durations,index=ids_origin,columns=ids_dest,dtype=float)
+            distances = DataFrame(distances, index=ids_origin,columns=ids_dest, dtype=float)
+        return distances #, new_src_coords, new_dest_coords
+        #return durations, new_src_coords, new_dest_coords
 
 
 def nearest(coord, url_config=RequestConfig):
