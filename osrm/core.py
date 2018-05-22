@@ -36,7 +36,7 @@ def check_host(host):
         return host
 
 
-def match(points, steps=False, overview="simplified", geometry="polyline",
+def match(points, steps=False, overview="simplified", geometry="polyline6",
           timestamps=None, radius=None, url_config=RequestConfig):
     """
     Function wrapping OSRM 'match' function, returning the reponse in JSON
@@ -66,17 +66,24 @@ def match(points, steps=False, overview="simplified", geometry="polyline",
     """
     host = check_host(url_config.host)
 
-    url = [
-        host, '/match/', url_config.version, '/', url_config.profile, '/',
-        ';'.join(
-            [','.join([str(coord[0]), str(coord[1])]) for coord in points]),
-        "?overview={}&steps={}&geometries={}"
-           .format(overview, str(steps).lower(), geometry)
-    ]
+    if type(points) is str:
+        url = [host, '/match/',url_config.version,'/',url_config.profile,'/', "polyline6({})".format(points),"?overview={}&steps={}&geometries={}"
+               .format(overview, str(steps).lower(), geometry)]
+#    else:
+#        url = [
+#            host, '/match/', url_config.version, '/', url_config.profile, '/',
+#            ';'.join(
+#                [','.join([str(coord[0]), str(coord[1])]) for coord in points]),
+#            "?overview={}&steps={}&geometries={}"
+#               .format(overview, str(steps).lower(), geometry)
+#        ]
 
     if radius:
+        url.append("&radiuses=")
         url.append(";".join([str(rad) for rad in radius]))
+    
     if timestamps:
+        url.append("&timestamps=")
         url.append(";".join([str(timestamp) for timestamp in timestamps]))
 
     r = urlopen("".join(url))
