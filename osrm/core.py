@@ -69,14 +69,14 @@ def match(points, steps=False, overview="simplified", geometry="polyline6",
     if type(points) is str:
         url = [host, '/match/',url_config.version,'/',url_config.profile,'/', "polyline6({})".format(points),"?overview={}&steps={}&geometries={}"
                .format(overview, str(steps).lower(), geometry)]
-#    else:
-#        url = [
-#            host, '/match/', url_config.version, '/', url_config.profile, '/',
-#            ';'.join(
-#                [','.join([str(coord[0]), str(coord[1])]) for coord in points]),
-#            "?overview={}&steps={}&geometries={}"
-#               .format(overview, str(steps).lower(), geometry)
-#        ]
+    else:
+        url = [
+            host, '/match/', url_config.version, '/', url_config.profile, '/',
+            ';'.join(
+                [','.join([str(coord[0]), str(coord[1])]) for coord in points]),
+            "?overview={}&steps={}&geometries={}"
+               .format(overview, str(steps).lower(), geometry)
+        ]
 
     if radius:
         url.append("&radiuses=")
