@@ -85,27 +85,39 @@ def match(points, steps=False, overview="simplified", geometry="polyline",
         url.append(";".join([str(timestamp) for timestamp in timestamps]))
 
 # hacky.
-    r_json = []
-    try: urllib.request.urlopen(''.join(url))
+    r_json = None
+    #rep = None
+    try: rep = urllib.request.urlopen(''.join(url))
         #rep = urllib.request.urlopen("".join(url))
         #r_json = json.loads(rep.read().decode('utf-8'))            
     
-    except urllib.error.HTTPError as e:
+    except urllib.error.HTTPError as e: 
+        #r_json = json.loads(rep.read().decode('utf-8'))
+        #http_error_code = e.reason
         r_json = e.reason
+        #return r_json
     
-    if len(r_json)==0:
-        rep = urllib.request.urlopen("".join(url))        
-        r_json = json.loads(rep.read().decode('utf-8'))
+    #if len(rep)==0:
+        #rep = urllib.request.urlopen("".join(url))        
+        #r_json = json.loads(rep.read().decode('utf-8'))
     #r = urlopen("".join(url))
     #r_json = json.loads(r.read().decode('utf-8'))
-    if "code" not in r_json or "Ok" not in r_json["code"]:
-        if 'matchings' in r_json.keys():
-            for i, _ in enumerate(r_json['matchings']):
-                geom_encoded = r_json["matchings"][i]["geometry"]
-                geom_decoded = [[point[1] / 10.0,
-                                 point[0] / 10.0] for point
-                                in PolylineCodec().decode(geom_encoded)]
-                r_json["matchings"][i]["geometry"] = geom_decoded
+    #if "code" not in r_json or "Ok" not in r_json["code"]:
+          
+    #try: r_json["code"]
+    #except:
+    if r_json is None:    
+    #if r_json is None:
+        rep = urllib.request.urlopen(''.join(url))
+        r_json = json.loads(rep.read().decode('utf-8'))
+        if "ok" in r_json["code"]:        
+            if 'matchings' in r_json.keys():
+                for i, _ in enumerate(r_json['matchings']):
+                    geom_encoded = r_json["matchings"][i]["geometry"]
+                    geom_decoded = [[point[1] / 10.0,
+                                     point[0] / 10.0] for point
+                                    in PolylineCodec().decode(geom_encoded)]
+                    r_json["matchings"][i]["geometry"] = geom_decoded
 
     return r_json
 
@@ -207,31 +219,39 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
                  str(alternatives).lower(), geom_request, annotations)
             ]
 
-            
-    rep = urllib.request.urlopen(''.join(url))
+    parsed_json = None
+    try: rep = urllib.request.urlopen(''.join(url))
+    
+    except: urllib.error.HTTPError as e:
+        parsed_json = e.reason
+    
     parsed_json = json.loads(rep.read().decode('utf-8'))
 
-    if "Ok" in parsed_json['code']:
-        if geometry in ("polyline", "geojson") and output == "full":
-            return parsed_json
-        elif geometry in ("polyline", "geojson") and output == "routes":
-            return parsed_json["routes"]
-        else:
-            if geometry == "wkb":
-                func = Geometry.ExportToWkb
-            elif geometry == "wkt":
-                func = Geometry.ExportToWkt
+    if parsed_json is None
+        rep = urllib.request.urlopen(''.join(url))
 
-            for route in parsed_json["routes"]:
-                route["geometry"] = func(decode_geom(route["geometry"]))
+        if "Ok" in parsed_json['code']:
+            if geometry in ("polyline", "geojson") and output == "full":
+                return parsed_json
+            elif geometry in ("polyline", "geojson") and output == "routes":
+                return parsed_json["routes"]
+            else:
+                if geometry == "wkb":
+                    func = Geometry.ExportToWkb
+                elif geometry == "wkt":
+                    func = Geometry.ExportToWkt
 
-        return parsed_json if output == "full" else parsed_json["routes"]
+                for route in parsed_json["routes"]:
+                    route["geometry"] = func(decode_geom(route["geometry"]))
 
-    else:
-        raise ValueError(
-            'Error - OSRM status : {} \n Full json reponse : {}'.format(
-                parsed_json['code'], parsed_json))
+            return parsed_json if output == "full" else parsed_json["routes"]
 
+        #else:
+        #    raise ValueError(
+         #       'Error - OSRM status : {} \n Full json reponse : {}'.format(
+          #          parsed_json['code'], parsed_json))
+
+    return parsed_json
 
 def table(coords_src, taxi_ids, coords_dest=None,
           ids_origin=None, ids_dest=None,
@@ -336,7 +356,7 @@ def table(coords_src, taxi_ids, coords_dest=None,
         url = ''.join([url,('?annotations=%s' % (annotations))])
 
 
-    rep = urlopen(url)
+    rep = urllib.request.urlopen(url)
     parsed_json = json.loads(rep.read().decode('utf-8'))
 
     if "code" not in parsed_json or "Ok" not in parsed_json["code"]:
@@ -390,7 +410,7 @@ def nearest(coord, url_config=RequestConfig):
         [host, 'nearest', url_config.version, url_config.profile,
          str(coord).replace('(', '').replace(')', '').replace(' ', '')]
         )
-    rep = urlopen(url)
+    rep = urllib.request.urlopen(url)
     parsed_json = json.loads(rep.read().decode('utf-8'))
     return parsed_json
 
@@ -452,7 +472,7 @@ def trip(coords, steps=False, output="full",
          '&overview={}'.format(overview)
          ])
 
-    rep = urlopen(url)
+    rep = urllib.request.urlopen(url)
     parsed_json = json.loads(rep.read().decode('utf-8'))
 
     if "Ok" in parsed_json['code']:
