@@ -222,13 +222,13 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
     parsed_json = None
     try: rep = urllib.request.urlopen(''.join(url))
     
-    except: urllib.error.HTTPError as e:
+    except urllib.error.HTTPError as e:
         parsed_json = e.reason
     
-    parsed_json = json.loads(rep.read().decode('utf-8'))
-
-    if parsed_json is None
+    
+    if parsed_json is None:
         rep = urllib.request.urlopen(''.join(url))
+        parsed_json = json.loads(rep.read().decode('utf-8'))
 
         if "Ok" in parsed_json['code']:
             if geometry in ("polyline", "geojson") and output == "full":
@@ -245,6 +245,8 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
                     route["geometry"] = func(decode_geom(route["geometry"]))
 
             return parsed_json if output == "full" else parsed_json["routes"]
+
+
 
         #else:
         #    raise ValueError(
