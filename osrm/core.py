@@ -255,7 +255,7 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
 
     return parsed_json
 
-def table(coords_src, taxi_ids, coords_dest=None,
+def table(coords_src, coords_dest,
           ids_origin=None, ids_dest=None,
           output='np', minutes=False,
           url_config=RequestConfig, send_as_polyline=True, annotations='distance'):
@@ -355,7 +355,7 @@ def table(coords_src, taxi_ids, coords_dest=None,
                 ])
 
     if annotations=='distance':
-        url = ''.join([url,('?annotations=%s' % (annotations))])
+        url = ''.join([url,('&annotations=%s' % (annotations))])
 
 
     rep = urllib.request.urlopen(url)
@@ -378,8 +378,8 @@ def table(coords_src, taxi_ids, coords_dest=None,
             durations = np.around((durations / 60), 2)
         if output == 2:
             if not ids_origin:
-                #ids_origin = [i for i in range(len(coords_src))]
-                ids_origin = taxi_ids
+                ids_origin = [i for i in range(len(coords_src))]
+                #ids_origin = taxi_ids
             if not ids_dest:
                 ids_dest = ids_origin if not coords_dest \
                     else [i for i in range(len(coords_dest))]
