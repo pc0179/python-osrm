@@ -257,8 +257,8 @@ def simple_route(coord_origin, coord_dest, coord_intermediate=None,
 
 def table(coords_src, coords_dest,
           ids_origin=None, ids_dest=None,
-          output='np', minutes=False,
-          url_config=RequestConfig, send_as_polyline=True, annotations='distance'):
+          output='np', minutes=True,
+          url_config=RequestConfig, send_as_polyline=True): #, send_as_polyline=True, annotations='distance'):
     """
     Function wrapping OSRM 'table' function in order to get a matrix of
     time distance as a numpy array or as a DataFrame
@@ -354,8 +354,8 @@ def table(coords_src, coords_dest,
                 ';'.join([str(j) for j in range(src_end, dest_end)])
                 ])
 
-    if annotations=='distance':
-        url = ''.join([url,('&annotations=%s' % (annotations))])
+#    if annotations=='distance':
+#        url = ''.join([url,('&annotations=%s' % (annotations))])
 
 
     rep = urllib.request.urlopen(url)
@@ -368,8 +368,8 @@ def table(coords_src, coords_dest,
         return parsed_json
 
     else:
-        #durations = np.array(parsed_json["durations"], dtype=float)
-        distances = np.array(parsed_json['distances'], dtype=float)
+        durations = np.array(parsed_json["durations"], dtype=float)
+        #distances = np.array(parsed_json['distances'], dtype=float)
         new_src_coords = [ft["location"] for ft in parsed_json["sources"]]
         new_dest_coords = None if not coords_dest \
             else [ft["location"] for ft in parsed_json["destinations"]]
@@ -384,9 +384,9 @@ def table(coords_src, coords_dest,
                 ids_dest = ids_origin if not coords_dest \
                     else [i for i in range(len(coords_dest))]
 
-            #durations = DataFrame(durations,index=ids_origin,columns=ids_dest,dtype=float)
+            durations = DataFrame(durations,index=ids_origin,columns=ids_dest,dtype=float)
             distances = DataFrame(distances, index=ids_origin,columns=ids_dest, dtype=float)
-        return distances #, new_src_coords, new_dest_coords
+        return durations #distances, new_src_coords, new_dest_coords
         #return durations, new_src_coords, new_dest_coords
 
 
